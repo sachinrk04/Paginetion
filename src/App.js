@@ -3,6 +3,7 @@ import './App.css';
 import axios from 'axios';
 import Button from './components/Button';
 import ContactData from './components/ContactData/ContactData';
+import Select from './components/Select';
 
 class App extends Component {
   constructor(props) {
@@ -10,25 +11,27 @@ class App extends Component {
     this.state = {
       page: 1,
       per_page:3,
-      data: [],
-      loading: false
+      data: [], 
+      loading: false,
+      totalPages: ''
     }
 
     this.getData = this.getData.bind(this);
-    this.btnClick = this.btnClick.bind(this);
+    // this.btnClick = this.btnClick.bind(this);
   }
    
   getData = () => {
-    const { page, per_page } = this.state;
+    const { page, per_page,total_pages } = this.state;
     this.setState({
       data: [],
       loading: true
     })
-    axios.get(`https://reqres.in/api/users?page=${page}&per_page=${per_page}`)
+    axios.get(`https://reqres.in/api/users?page=${page}&per_page=${per_page}&total_pages=${total_pages}`)
       .then(response => {
         console.log(response);
         this.setState({
           data: response.data.data,
+          totalPages: response.data,
           loading: false,
         })
       })
@@ -41,13 +44,43 @@ class App extends Component {
       });
   }
 
-  btnClick = (e) => {
-    const page = e.target.value;
-    console.log(page);
-    this.setState({ 
-      page
+  onChange = (e) => {
+    console.log("Number : " , e.target.value);
+    this.setState({
+      page: e.target.value
     })
-    this.getData()
+  }
+
+  loadMore = (e) => {
+    const page = e.target.value;
+    console.log("Select Number :", page);
+    this.setState(prevState => ({
+      page
+    }),this.getData)
+  }
+
+  handlePrevClick = () => {
+    this.setState(prevState => ({
+      page: prevState.page - 1
+    }),this.getData)
+  }
+
+  handleNextClick = () => {
+    this.setState(prevState => ({
+      page: prevState.page + 1
+    }),this.getData)
+  }
+
+  handleLastClick = () => {
+    this.setState(prevState => ({
+      page: 4
+    }),this.getData)
+  }
+
+  handleFirstClick = () => {
+    this.setState(prevState => ({
+      page: 1
+    }),this.getData)
   }
 
   componentDidMount() {
@@ -60,6 +93,25 @@ class App extends Component {
         <p>loading...</p>
       )
     }
+
+    let pageNumbers = [];
+    for (let i = 1; i <=this.state.totalPages.total_pages; i++) {
+      pageNumbers.push(i);
+    }
+
+    let evenNumbers = [];
+    let oddNumbers = [];
+    for (let i = 1; i <=this.state.totalPages.total_pages; i++) {
+      if (i%2 === 0) {
+        let even = i;
+        evenNumbers.push(even);
+      } 
+      else {
+        let odd = i;
+        oddNumbers.push(odd);
+      }
+    }
+
     return (
       <div className="App">
         <div className="App-list">
@@ -76,13 +128,19 @@ class App extends Component {
           </ul>
         </div>
         <div className="App-button">
-        <button name="1" onClick={this.btnClick}>|<i className="fas fa-angle-double-left"></i></button>
-        <Button name="<<" onClick={this.btnClick} />
-        <Button name="1" onClick={this.btnClick} />
-        <Button name="2" onClick={this.btnClick} />
-        <Button name="3" onClick={this.btnClick} />
-        <Button name=">>" onClick={this.btnClick} />
-        <button name="5" onClick={this.btnClick}><i className="fas fa-angle-double-right">|</i></button>
+        <button onClick={this.handleFirstClick}>|<i className="fas fa-angle-double-left"></i></button>
+        <Button name="<<" onClick={this.handlePrevClick} />
+        {
+          pageNumbers.map(pageNumber => {
+            return (
+              <Button key={pageNumber} name={pageNumber} onClick={this.loadMore} />
+            )
+          })
+        }
+        <Select name={oddNumbers} onClick={this.loadMore} change={this.onChange} />
+        <Select name={evenNumbers} onClick={this.loadMore} change={this.onChange} />
+        <Button name=">>" onClick={this.handleNextClick} />
+        <button onClick={this.handleLastClick}><i className="fas fa-angle-double-right">|</i></button>
         </div>
       </div>
     );
